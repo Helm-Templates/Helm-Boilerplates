@@ -1,0 +1,80 @@
+# ref: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/cron-job-v1/
+{{- $global := . }}
+{{- $Values := .Values }}
+{{- $cronjob := .Values.exampleCronJob }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: prefix-{{ include "[chartname].fullname" . }}
+  labels:
+    {{ include "" $global }}
+  annotations:
+    {{- toYaml $cronjob.annotations | nindent 4 }}
+{{- with $cronjob }}
+spec:
+  schedule: {{ quote .schedule }}
+  concurrencyPolicy: {{ .concurrencyPolicy | default 'Allow' }}
+  startingDeadlineSeconds: {{ .startingDeadlineSeconds | default 100 }}
+  suspend: {{ .suspend | default false }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit | default 3}}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit | default 1 }}
+  {{- if .timeZone }}
+  timeZone: {{ quote .timeZone}}
+  {{- end }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "pgdump-cron.selectorLabels" . | nindent 12 }}
+        spec:
+          {{- with .imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "pgdump-cron.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .podSecurityContext | nindent 14 }}
+          restartPolicy: Never
+          containers:
+            - name: {{ .Chart.Name }}
+              securityContext:
+                {{- toYaml .securityContext | nindent 16 }}
+              image: "{{ .image.repository | default $Values.image.repository }}:{{ .image.tag | default $Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - sh
+                - -c
+                - "/scripts/init.sh && /scripts/backup.sh"
+              resources:
+                {{- toYaml .resources | nindent 16 }}
+              # envFrom:
+              #   - secretRef:
+              #       name: env-secret
+              #   - configMapRef:
+              #       name: env-configmap
+              # volumeMounts:
+              #   - name: volume
+              #     mountPath: /mnt
+          {{- with .nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          volumes:
+            # - name: scripts-volume
+            #   configMap:
+            #     name: {{ include "pgdump-cron.fullname" . }}-scripts
+            #     defaultMode: 511
+{{- end }}

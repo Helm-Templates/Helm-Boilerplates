@@ -1,0 +1,58 @@
+exampleCronJob:
+  annotations: {}
+  schedule: "* * * * *"
+  
+  ###
+  # Available concurrency options are "Allow", "Forbid" or "Replace"
+  
+  # concurrencyPolicy: "Allow"
+
+  ###
+  # Optional deadline in seconds for starting the job if it misses scheduled time for any reason. 
+  # Missed jobs executions will be counted as failed ones.
+  
+  # startingDeadlineSeconds: 100
+
+  ###
+  # This flag tells the controller to suspend subsequent executions, 
+  # it does not apply to already started executions.
+
+  # suspend: false
+  
+  ###
+  # The number of successful finished jobs to retain. 
+  successfulJobsHistoryLimit: 3
+  # The number of failed finished jobs to retain. 
+  failedJobsHistoryLimit: 1
+
+  ###
+  # Alpha feature
+  # This field is in alpha and must be enabled via the CronJobTimeZone feature gate.
+  
+  # timeZone: "UTC"
+
+  jobTemplate:
+    annotations: {}
+
+  ###
+  # Pod spec
+
+  podAnnotations: {}
+  
+  # imagePullSecrets: 
+  # serviceAccountName: 
+  # podSecurityContext: {}
+  # securityContext: {}
+  image:
+    repository: busybox
+    tag: 
+    # imagePullPolicy: IfNotPresent
+  
+  # restartPolicy: Never
+
+  # command: ["echo", "Job complete"]
+    
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tollerations: {}
